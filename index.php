@@ -1,4 +1,5 @@
 <?php
+// index.php
 $slides = [
     [
         'img' => './media/banner-fossil.jpg',
@@ -20,30 +21,35 @@ $slides = [
 
 $categories = [
     [
+        'slug' => 'relojes-caballero',
         'title' => 'Relojes de caballero',
         'subtitle' => 'Ver colección',
         'img' => './media/categoria-1.jpg',
         'alt' => 'Relojes de caballero',
-        'href' => '#'
+        'href' => './categoria.php?cat=relojes-caballero'
     ],
     [
+        'slug' => 'relojes-dama',
         'title' => 'Relojes de dama',
         'subtitle' => 'Ver colección',
         'img' => './media/categoria-2.jpg',
         'alt' => 'Relojes de dama',
-        'href' => '#'
+        'href' => './categoria.php?cat=relojes-dama'
     ],
     [
+        'slug' => 'correas',
         'title' => 'Correas',
         'subtitle' => 'Ver colección',
         'img' => './media/categoria-3.jpg',
         'alt' => 'Correas',
-        'href' => '#correas'
+        'href' => './categoria.php?cat=correas'
     ],
 ];
 
 $products = [
     [
+        'slug' => 'correa-fossil',
+        'category_slug' => 'correas',
         'img' => './media/S241079_main-300x400.jpg',
         'alt' => 'Correa Fossil',
         'discount' => '-6%',
@@ -53,10 +59,11 @@ $products = [
         'name' => 'Correa Fossil',
         'old_price' => 'S/ 160.00',
         'price' => 'S/ 150.00',
-        'action' => 'Añadir al carrito',
-        'href' => '#'
+        'action' => 'Ver detalle',
     ],
     [
+        'slug' => 'reloj-fossil-fs4682',
+        'category_slug' => 'relojes-caballero',
         'img' => './media/FS4682_main-300x400.jpg',
         'alt' => 'Reloj Fossil FS4682',
         'discount' => '-17%',
@@ -66,10 +73,11 @@ $products = [
         'name' => 'Reloj Fossil FS4682',
         'old_price' => 'S/ 600.00',
         'price' => 'S/ 500.00',
-        'action' => 'Leer más',
-        'href' => '#'
+        'action' => 'Ver detalle',
     ],
     [
+        'slug' => 'reloj-fossil-fs4735',
+        'category_slug' => 'relojes-caballero',
         'img' => './media/FS4735_main-300x400.jpg',
         'alt' => 'Reloj Fossil FS4735',
         'discount' => '-17%',
@@ -79,10 +87,11 @@ $products = [
         'name' => 'Reloj Fossil FS4735',
         'old_price' => 'S/ 600.00',
         'price' => 'S/ 500.00',
-        'action' => 'Añadir al carrito',
-        'href' => '#'
+        'action' => 'Ver detalle',
     ],
     [
+        'slug' => 'reloj-fossil-fs4812',
+        'category_slug' => 'relojes-caballero',
         'img' => './media/FS4812_main-300x400.jpg',
         'alt' => 'Reloj Fossil FS4812',
         'discount' => '-17%',
@@ -92,10 +101,11 @@ $products = [
         'name' => 'Reloj Fossil FS4812',
         'old_price' => 'S/ 600.00',
         'price' => 'S/ 500.00',
-        'action' => 'Añadir al carrito',
-        'href' => '#'
+        'action' => 'Ver detalle',
     ],
     [
+        'slug' => 'reloj-fossil-fs4813',
+        'category_slug' => 'relojes-caballero',
         'img' => './media/FS4813_main-300x400.jpg',
         'alt' => 'Reloj Fossil FS4813',
         'discount' => '-17%',
@@ -105,8 +115,7 @@ $products = [
         'name' => 'Reloj Fossil FS4813',
         'old_price' => 'S/ 600.00',
         'price' => 'S/ 500.00',
-        'action' => 'Añadir al carrito',
-        'href' => '#'
+        'action' => 'Ver detalle',
     ],
 ];
 
@@ -486,7 +495,9 @@ function e($value)
                                     </button>
                                 <?php endif; ?>
 
-                                <img src="<?= e($product['img']); ?>" alt="<?= e($product['alt']); ?>" class="h-full w-full object-contain p-5 transition duration-700 group-hover:scale-105">
+                                <a href="./producto.php?p=<?= e($product['slug']); ?>" class="block h-full w-full">
+                                    <img src="<?= e($product['img']); ?>" alt="<?= e($product['alt']); ?>" class="h-full w-full object-contain p-5 transition duration-700 group-hover:scale-105">
+                                </a>
                             </div>
 
                             <div class="px-2 pb-3 pt-5 text-center">
@@ -503,7 +514,7 @@ function e($value)
                                     <span class="text-base font-black text-white"><?= e($product['price']); ?></span>
                                 </div>
 
-                                <a href="<?= e($product['href']); ?>" class="product-action mt-5 inline-flex items-center justify-center rounded-full bg-brand-mint px-5 py-3 text-xs font-black uppercase tracking-[.13em] text-black shadow-mint transition hover:bg-white lg:opacity-0">
+                                <a href="./producto.php?p=<?= e($product['slug']); ?>" class="product-action mt-5 inline-flex items-center justify-center rounded-full bg-brand-mint px-5 py-3 text-xs font-black uppercase tracking-[.13em] text-black shadow-mint transition hover:bg-white lg:opacity-0">
                                     <?= e($product['action']); ?>
                                 </a>
                             </div>
