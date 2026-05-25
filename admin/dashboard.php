@@ -9,10 +9,6 @@ if (empty($_SESSION['admin_logged'])) {
 $jsonPath = __DIR__ . '/../data/tienda.json';
 
 if (!file_exists($jsonPath)) {
-    if (!is_dir(__DIR__ . '/../data')) {
-        mkdir(__DIR__ . '/../data', 0775, true);
-    }
-
     file_put_contents($jsonPath, json_encode([
         'categories' => [],
         'products' => []
@@ -24,26 +20,65 @@ $data = json_decode(file_get_contents($jsonPath), true);
 $categories = $data['categories'] ?? [];
 $products = $data['products'] ?? [];
 
-$totalCategories = count($categories);
-$totalProducts = count($products);
-$totalAvailable = count(array_filter($products, fn($p) => empty($p['status'])));
-$totalSoldOut = count(array_filter($products, fn($p) => strtolower($p['status'] ?? '') === 'agotado'));
-
 function e($value)
 {
-    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
-function imgPath($path)
-{
-    return '../' . str_replace('./', '', $path);
+$totalCategories = count($categories);
+$totalProducts = count($products);
+
+$availableProducts = count(array_filter($products, function ($p) {
+    return empty($p['status']);
+}));
+
+$soldOutProducts = count(array_filter($products, function ($p) {
+    return strtolower($p['status'] ?? '') === 'agotado';
+}));
+
+$productsWithDiscount = count(array_filter($products, function ($p) {
+    return !empty($p['discount']);
+}));
+
+$productsWithImage = count(array_filter($products, function ($p) {
+    return !empty($p['img']);
+}));
+
+$coverageImage = $totalProducts > 0 ? round(($productsWithImage / $totalProducts) * 100) : 0;
+$soldOutRate = $totalProducts > 0 ? round(($soldOutProducts / $totalProducts) * 100) : 0;
+$availableRate = $totalProducts > 0 ? round(($availableProducts / $totalProducts) * 100) : 0;
+
+$categoryStats = [];
+
+foreach ($categories as $cat) {
+    $slug = $cat['slug'] ?? '';
+    $count = count(array_filter($products, function ($p) use ($slug) {
+        return ($p['category_slug'] ?? '') === $slug;
+    }));
+
+    $categoryStats[] = [
+        'title' => $cat['title'] ?? $slug,
+        'slug' => $slug,
+        'count' => $count
+    ];
 }
+
+usort($categoryStats, function ($a, $b) {
+    return $b['count'] <=> $a['count'];
+});
+
+$topCategory = $categoryStats[0] ?? [
+    'title' => 'Sin categoría dominante',
+    'count' => 0
+];
+
+$latestProducts = array_slice(array_reverse($products), 0, 5);
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Admin | Le Grand</title>
+    <title>Dashboard Ejecutivo | Le Grand</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -51,8 +86,8 @@ function imgPath($path)
     <style>
         body {
             background:
-                radial-gradient(circle at 5% -10%, rgba(95, 216, 173, .12), transparent 34rem),
-                radial-gradient(circle at 95% 0%, rgba(217, 184, 115, .13), transparent 30rem),
+                radial-gradient(circle at 5% -10%, rgba(95, 216, 173, .13), transparent 34rem),
+                radial-gradient(circle at 95% 0%, rgba(217, 184, 115, .14), transparent 30rem),
                 linear-gradient(180deg, #fbfaf7 0%, #f7f6f2 100%);
         }
     </style>
@@ -72,22 +107,14 @@ function imgPath($path)
             </div>
 
             <nav class="flex-1 space-y-2 px-4 py-6 text-sm font-black">
-                <a href="#resumen" class="flex items-center gap-3 rounded-2xl bg-black px-4 py-3 text-white">
-                    <span>📊</span> Resumen
-                </a>
-                <a href="#categorias" class="flex items-center gap-3 rounded-2xl px-4 py-3 text-neutral-600 transition hover:bg-neutral-100 hover:text-black">
-                    <span>🗂️</span> Categorías
-                </a>
-                <a href="#productos" class="flex items-center gap-3 rounded-2xl px-4 py-3 text-neutral-600 transition hover:bg-neutral-100 hover:text-black">
-                    <span>⌚</span> Productos
-                </a>
-                <a href="../index.php" target="_blank" class="flex items-center gap-3 rounded-2xl px-4 py-3 text-neutral-600 transition hover:bg-neutral-100 hover:text-black">
-                    <span>🌐</span> Ver tienda
-                </a>
+                <a href="dashboard.php" class="block rounded-2xl bg-black px-4 py-3 text-white">Dashboard</a>
+                <a href="categorias.php" class="block rounded-2xl px-4 py-3 text-neutral-600 hover:bg-neutral-100">Categorías</a>
+                <a href="productos.php" class="block rounded-2xl px-4 py-3 text-neutral-600 hover:bg-neutral-100">Productos</a>
+                <a href="../index.php" target="_blank" class="block rounded-2xl px-4 py-3 text-neutral-600 hover:bg-neutral-100">Ver tienda</a>
             </nav>
 
             <div class="border-t border-black/5 p-4">
-                <a href="logout.php" class="flex items-center justify-center rounded-2xl bg-red-50 px-5 py-3 text-sm font-black text-red-700 transition hover:bg-red-600 hover:text-white">
+                <a href="logout.php" class="block rounded-2xl bg-red-50 px-5 py-3 text-center text-sm font-black text-red-700 hover:bg-red-600 hover:text-white">
                     Cerrar sesión
                 </a>
             </div>
@@ -98,20 +125,16 @@ function imgPath($path)
         <header class="sticky top-0 z-40 border-b border-black/5 bg-white/85 backdrop-blur-xl">
             <div class="flex min-h-[76px] items-center justify-between px-4 sm:px-6 lg:px-8">
                 <div>
-                    <p class="text-xs font-black uppercase tracking-[.22em] text-[#2D9B6B]">
-                        Le Grand
-                    </p>
-                    <h1 class="text-xl font-black tracking-[-.03em] sm:text-2xl">
-                        Administración de tienda
-                    </h1>
+                    <p class="text-xs font-black uppercase tracking-[.22em] text-[#2D9B6B]">Le Grand</p>
+                    <h1 class="text-xl font-black tracking-[-.03em] sm:text-2xl">Dashboard ejecutivo</h1>
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <a href="../index.php" target="_blank" class="hidden rounded-full bg-neutral-100 px-5 py-3 text-sm font-black transition hover:bg-black hover:text-white sm:inline-flex">
+                    <a href="../index.php" target="_blank" class="hidden rounded-full bg-neutral-100 px-5 py-3 text-sm font-black hover:bg-black hover:text-white sm:inline-flex">
                         Ver tienda
                     </a>
 
-                    <a href="logout.php" class="rounded-full bg-black px-5 py-3 text-sm font-black text-white transition hover:bg-[#5FD8AD] hover:text-black">
+                    <a href="logout.php" class="rounded-full bg-black px-5 py-3 text-sm font-black text-white hover:bg-[#5FD8AD] hover:text-black">
                         Salir
                     </a>
                 </div>
@@ -120,223 +143,182 @@ function imgPath($path)
 
         <main class="px-4 py-8 sm:px-6 lg:px-8">
 
-            <section id="resumen">
-                <div class="rounded-[2rem] bg-black p-6 text-white shadow-[0_30px_100px_rgba(0,0,0,.18)] sm:p-8">
-                    <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                        <div>
-                            <p class="text-xs font-black uppercase tracking-[.24em] text-[#5FD8AD]">
-                                Dashboard
-                            </p>
-                            <h2 class="mt-3 text-4xl font-black tracking-[-.06em] sm:text-5xl">
-                                Gestión de catálogo
-                            </h2>
-                            <p class="mt-4 max-w-2xl text-white/55">
-                                Administra categorías, productos, precios, estados e imágenes desde archivos JSON.
-                            </p>
-                        </div>
-
-                        <div class="rounded-3xl border border-white/10 bg-white/10 px-5 py-4 backdrop-blur-xl">
-                            <p class="text-xs font-black uppercase tracking-[.18em] text-white/45">
-                                Acceso
-                            </p>
-                            <p class="mt-1 text-xl font-black">admin</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <div class="rounded-[1.7rem] bg-white p-6 shadow-[0_20px_70px_rgba(0,0,0,.07)]">
-                        <p class="text-sm font-bold text-neutral-500">Categorías</p>
-                        <p class="mt-3 text-4xl font-black"><?= e($totalCategories); ?></p>
-                    </div>
-
-                    <div class="rounded-[1.7rem] bg-white p-6 shadow-[0_20px_70px_rgba(0,0,0,.07)]">
-                        <p class="text-sm font-bold text-neutral-500">Productos</p>
-                        <p class="mt-3 text-4xl font-black"><?= e($totalProducts); ?></p>
-                    </div>
-
-                    <div class="rounded-[1.7rem] bg-white p-6 shadow-[0_20px_70px_rgba(0,0,0,.07)]">
-                        <p class="text-sm font-bold text-neutral-500">Disponibles</p>
-                        <p class="mt-3 text-4xl font-black text-[#2D9B6B]"><?= e($totalAvailable); ?></p>
-                    </div>
-
-                    <div class="rounded-[1.7rem] bg-white p-6 shadow-[0_20px_70px_rgba(0,0,0,.07)]">
-                        <p class="text-sm font-bold text-neutral-500">Agotados</p>
-                        <p class="mt-3 text-4xl font-black text-red-600"><?= e($totalSoldOut); ?></p>
-                    </div>
-                </div>
-            </section>
-
-            <section class="mt-8 grid gap-6 xl:grid-cols-[.9fr_1.1fr]">
-
-                <div id="categorias" class="rounded-[2rem] bg-white p-6 shadow-[0_24px_80px_rgba(0,0,0,.08)]">
-                    <h2 class="text-2xl font-black">Nueva categoría</h2>
-                    <p class="mt-1 text-sm text-neutral-500">Crea una categoría para agrupar productos.</p>
-
-                    <form action="save.php" method="POST" enctype="multipart/form-data" class="mt-6 grid gap-4">
-                        <input type="hidden" name="type" value="category">
-
-                        <div>
-                            <label class="text-sm font-bold">Nombre</label>
-                            <input name="title" required placeholder="Ej: Relojes de dama" class="mt-2 w-full rounded-2xl border border-black/10 px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-100">
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-bold">Subtítulo</label>
-                            <input name="subtitle" value="Ver colección" class="mt-2 w-full rounded-2xl border border-black/10 px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-100">
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-bold">Imagen</label>
-                            <input name="img" type="file" accept="image/*" class="mt-2 w-full rounded-2xl border border-black/10 bg-white px-4 py-3">
-                        </div>
-
-                        <button class="rounded-2xl bg-black px-5 py-4 font-black text-white transition hover:bg-[#5FD8AD] hover:text-black">
-                            Guardar categoría
-                        </button>
-                    </form>
-                </div>
-
-                <div id="productos" class="rounded-[2rem] bg-white p-6 shadow-[0_24px_80px_rgba(0,0,0,.08)]">
-                    <h2 class="text-2xl font-black">Nuevo producto</h2>
-                    <p class="mt-1 text-sm text-neutral-500">Agrega productos al catálogo de la tienda.</p>
-
-                    <form action="save.php" method="POST" enctype="multipart/form-data" class="mt-6 grid gap-4">
-                        <input type="hidden" name="type" value="product">
-
-                        <div>
-                            <label class="text-sm font-bold">Categoría</label>
-                            <select name="category_slug" required class="mt-2 w-full rounded-2xl border border-black/10 px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-100">
-                                <option value="">Seleccionar categoría</option>
-                                <?php foreach ($categories as $cat): ?>
-                                    <option value="<?= e($cat['slug']); ?>">
-                                        <?= e($cat['title']); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-bold">Nombre</label>
-                            <input name="name" required placeholder="Ej: Reloj Fossil FS9999" class="mt-2 w-full rounded-2xl border border-black/10 px-4 py-3 outline-none focus:ring-4 focus:ring-emerald-100">
-                        </div>
-
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <label class="text-sm font-bold">Precio anterior</label>
-                                <input name="old_price" placeholder="S/ 600.00" class="mt-2 w-full rounded-2xl border border-black/10 px-4 py-3">
-                            </div>
-
-                            <div>
-                                <label class="text-sm font-bold">Precio actual</label>
-                                <input name="price" placeholder="S/ 500.00" class="mt-2 w-full rounded-2xl border border-black/10 px-4 py-3">
-                            </div>
-                        </div>
-
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <label class="text-sm font-bold">Descuento</label>
-                                <input name="discount" placeholder="-17%" class="mt-2 w-full rounded-2xl border border-black/10 px-4 py-3">
-                            </div>
-
-                            <div>
-                                <label class="text-sm font-bold">Estado</label>
-                                <select name="status" class="mt-2 w-full rounded-2xl border border-black/10 px-4 py-3">
-                                    <option value="">Disponible</option>
-                                    <option value="Agotado">Agotado</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-bold">Meta</label>
-                            <input name="meta" placeholder="Caballero · Oferta · Relojes" class="mt-2 w-full rounded-2xl border border-black/10 px-4 py-3">
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-bold">Descripción</label>
-                            <textarea name="description" rows="3" class="mt-2 w-full rounded-2xl border border-black/10 px-4 py-3"></textarea>
-                        </div>
-
-                        <div>
-                            <label class="text-sm font-bold">Imagen principal</label>
-                            <input name="img" type="file" accept="image/*" class="mt-2 w-full rounded-2xl border border-black/10 bg-white px-4 py-3">
-                        </div>
-
-                        <button class="rounded-2xl bg-[#5FD8AD] px-5 py-4 font-black text-black transition hover:bg-black hover:text-white">
-                            Guardar producto
-                        </button>
-                    </form>
-                </div>
-
-            </section>
-
-            <section class="mt-8 rounded-[2rem] bg-white p-6 shadow-[0_24px_80px_rgba(0,0,0,.08)]">
-                <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <section class="rounded-[2rem] bg-black p-6 text-white shadow-[0_30px_100px_rgba(0,0,0,.18)] sm:p-8">
+                <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                     <div>
-                        <h2 class="text-2xl font-black">Categorías registradas</h2>
-                        <p class="text-sm text-neutral-500">Listado de categorías creadas.</p>
+                        <p class="text-xs font-black uppercase tracking-[.24em] text-[#5FD8AD]">
+                            Gestión comercial
+                        </p>
+                        <h2 class="mt-3 text-4xl font-black tracking-[-.06em] sm:text-5xl">
+                            Estado del catálogo
+                        </h2>
+                        <p class="mt-4 max-w-2xl text-white/55">
+                            Vista ejecutiva para revisar cobertura, disponibilidad, productos agotados y distribución por categoría.
+                        </p>
                     </div>
-                </div>
 
-                <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    <?php foreach ($categories as $cat): ?>
-                        <div class="rounded-2xl border border-black/5 bg-[#fbfaf7] p-4">
-                            <?php if (!empty($cat['img'])): ?>
-                                <img src="<?= e(imgPath($cat['img'])); ?>" class="h-36 w-full rounded-xl object-cover">
-                            <?php else: ?>
-                                <div class="grid h-36 place-items-center rounded-xl bg-neutral-100 text-sm font-bold text-neutral-400">
-                                    Sin imagen
-                                </div>
-                            <?php endif; ?>
-
-                            <h3 class="mt-3 font-black"><?= e($cat['title']); ?></h3>
-                            <p class="text-sm text-neutral-500"><?= e($cat['slug']); ?></p>
-                        </div>
-                    <?php endforeach; ?>
+                    <div class="rounded-3xl border border-white/10 bg-white/10 px-5 py-4 backdrop-blur-xl">
+                        <p class="text-xs font-black uppercase tracking-[.18em] text-white/45">Categoría líder</p>
+                        <p class="mt-1 text-xl font-black"><?= e($topCategory['title']); ?></p>
+                        <p class="text-sm text-white/50"><?= e($topCategory['count']); ?> productos</p>
+                    </div>
                 </div>
             </section>
 
-            <section class="mt-8 rounded-[2rem] bg-white p-6 shadow-[0_24px_80px_rgba(0,0,0,.08)]">
-                <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                        <h2 class="text-2xl font-black">Productos registrados</h2>
-                        <p class="text-sm text-neutral-500">Vista rápida del catálogo actual.</p>
+            <section class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <div class="rounded-[1.7rem] bg-white p-6 shadow-[0_20px_70px_rgba(0,0,0,.07)]">
+                    <p class="text-sm font-bold text-neutral-500">Total productos</p>
+                    <p class="mt-3 text-4xl font-black"><?= e($totalProducts); ?></p>
+                    <p class="mt-2 text-xs font-bold text-neutral-400">Catálogo publicado</p>
+                </div>
+
+                <div class="rounded-[1.7rem] bg-white p-6 shadow-[0_20px_70px_rgba(0,0,0,.07)]">
+                    <p class="text-sm font-bold text-neutral-500">Disponibles</p>
+                    <p class="mt-3 text-4xl font-black text-[#2D9B6B]"><?= e($availableProducts); ?></p>
+                    <p class="mt-2 text-xs font-bold text-neutral-400"><?= e($availableRate); ?>% del catálogo</p>
+                </div>
+
+                <div class="rounded-[1.7rem] bg-white p-6 shadow-[0_20px_70px_rgba(0,0,0,.07)]">
+                    <p class="text-sm font-bold text-neutral-500">Agotados</p>
+                    <p class="mt-3 text-4xl font-black text-red-600"><?= e($soldOutProducts); ?></p>
+                    <p class="mt-2 text-xs font-bold text-neutral-400"><?= e($soldOutRate); ?>% sin stock</p>
+                </div>
+
+                <div class="rounded-[1.7rem] bg-white p-6 shadow-[0_20px_70px_rgba(0,0,0,.07)]">
+                    <p class="text-sm font-bold text-neutral-500">Categorías</p>
+                    <p class="mt-3 text-4xl font-black"><?= e($totalCategories); ?></p>
+                    <p class="mt-2 text-xs font-bold text-neutral-400">Líneas comerciales</p>
+                </div>
+            </section>
+
+            <section class="mt-6 grid gap-6 xl:grid-cols-[1.1fr_.9fr]">
+
+                <div class="rounded-[2rem] bg-white p-6 shadow-[0_24px_80px_rgba(0,0,0,.08)]">
+                    <div class="flex items-end justify-between gap-4">
+                        <div>
+                            <h3 class="text-2xl font-black">Distribución por categoría</h3>
+                            <p class="mt-1 text-sm text-neutral-500">Cantidad de productos por línea.</p>
+                        </div>
+                        <a href="categorias.php" class="rounded-full bg-neutral-100 px-4 py-2 text-xs font-black hover:bg-black hover:text-white">
+                            Gestionar
+                        </a>
+                    </div>
+
+                    <div class="mt-6 space-y-4">
+                        <?php foreach ($categoryStats as $stat): ?>
+                            <?php
+                            $percent = $totalProducts > 0 ? round(($stat['count'] / $totalProducts) * 100) : 0;
+                            ?>
+                            <div>
+                                <div class="mb-2 flex justify-between text-sm font-bold">
+                                    <span><?= e($stat['title']); ?></span>
+                                    <span><?= e($stat['count']); ?> productos</span>
+                                </div>
+                                <div class="h-3 overflow-hidden rounded-full bg-neutral-100">
+                                    <div class="h-full rounded-full bg-[#5FD8AD]" style="width: <?= e($percent); ?>%"></div>
+                                </div>
+                                <p class="mt-1 text-xs font-bold text-neutral-400"><?= e($percent); ?>% del catálogo</p>
+                            </div>
+                        <?php endforeach; ?>
+
+                        <?php if (empty($categoryStats)): ?>
+                            <div class="rounded-2xl bg-neutral-50 p-6 text-center text-sm font-bold text-neutral-400">
+                                No hay categorías registradas.
+                            </div>
+                        <?php endif; ?>
                     </div>
                 </div>
 
-                <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    <?php foreach ($products as $product): ?>
-                        <div class="rounded-2xl border border-black/5 bg-[#fbfaf7] p-4">
-                            <?php if (!empty($product['img'])): ?>
-                                <img src="<?= e(imgPath($product['img'])); ?>" class="h-44 w-full rounded-xl bg-neutral-100 object-contain p-3">
-                            <?php else: ?>
-                                <div class="grid h-44 place-items-center rounded-xl bg-neutral-100 text-sm font-bold text-neutral-400">
-                                    Sin imagen
-                                </div>
-                            <?php endif; ?>
+                <div class="rounded-[2rem] bg-white p-6 shadow-[0_24px_80px_rgba(0,0,0,.08)]">
+                    <h3 class="text-2xl font-black">Indicadores de calidad</h3>
+                    <p class="mt-1 text-sm text-neutral-500">Revisión rápida del catálogo.</p>
 
-                            <div class="mt-3 flex items-start justify-between gap-3">
-                                <div>
-                                    <h3 class="font-black"><?= e($product['name']); ?></h3>
-                                    <p class="text-sm text-neutral-500"><?= e($product['category_slug']); ?></p>
-                                </div>
-
-                                <?php if (!empty($product['status'])): ?>
-                                    <span class="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-700">
-                                        <?= e($product['status']); ?>
-                                    </span>
-                                <?php endif; ?>
+                    <div class="mt-6 grid gap-4">
+                        <div class="rounded-2xl bg-[#f7f6f2] p-5">
+                            <div class="flex items-center justify-between">
+                                <p class="font-black">Productos con imagen</p>
+                                <p class="text-2xl font-black"><?= e($coverageImage); ?>%</p>
                             </div>
-
-                            <div class="mt-3 flex items-center gap-2">
-                                <?php if (!empty($product['old_price'])): ?>
-                                    <del class="text-sm text-neutral-400"><?= e($product['old_price']); ?></del>
-                                <?php endif; ?>
-                                <span class="font-black"><?= e($product['price']); ?></span>
+                            <div class="mt-3 h-3 overflow-hidden rounded-full bg-white">
+                                <div class="h-full rounded-full bg-[#5FD8AD]" style="width: <?= e($coverageImage); ?>%"></div>
                             </div>
                         </div>
-                    <?php endforeach; ?>
+
+                        <div class="rounded-2xl bg-[#f7f6f2] p-5">
+                            <p class="text-sm font-bold text-neutral-500">Productos en oferta</p>
+                            <p class="mt-2 text-3xl font-black"><?= e($productsWithDiscount); ?></p>
+                        </div>
+
+                        <div class="rounded-2xl bg-[#f7f6f2] p-5">
+                            <p class="text-sm font-bold text-neutral-500">Recomendación gerencial</p>
+                            <p class="mt-2 text-sm font-semibold leading-6 text-neutral-600">
+                                <?php if ($soldOutRate >= 30): ?>
+                                    Revisar reposición: el porcentaje de productos agotados es alto.
+                                <?php elseif ($coverageImage < 80): ?>
+                                    Mejorar carga visual: varios productos no tienen imagen.
+                                <?php elseif ($totalProducts < 10): ?>
+                                    Ampliar catálogo para mejorar variedad comercial.
+                                <?php else: ?>
+                                    El catálogo mantiene una estructura comercial saludable.
+                                <?php endif; ?>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <section class="mt-6 rounded-[2rem] bg-white p-6 shadow-[0_24px_80px_rgba(0,0,0,.08)]">
+                <div class="flex items-end justify-between gap-4">
+                    <div>
+                        <h3 class="text-2xl font-black">Últimos productos registrados</h3>
+                        <p class="mt-1 text-sm text-neutral-500">Vista rápida de los productos más recientes.</p>
+                    </div>
+
+                    <a href="productos.php" class="rounded-full bg-black px-4 py-2 text-xs font-black text-white hover:bg-[#5FD8AD] hover:text-black">
+                        Ver productos
+                    </a>
+                </div>
+
+                <div class="mt-5 overflow-hidden rounded-2xl border border-black/5">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-[#f7f6f2] text-xs uppercase tracking-[.16em] text-neutral-500">
+                            <tr>
+                                <th class="px-4 py-4">Producto</th>
+                                <th class="px-4 py-4">Categoría</th>
+                                <th class="px-4 py-4">Precio</th>
+                                <th class="px-4 py-4">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-black/5 bg-white">
+                            <?php foreach ($latestProducts as $product): ?>
+                                <tr>
+                                    <td class="px-4 py-4 font-black"><?= e($product['name'] ?? ''); ?></td>
+                                    <td class="px-4 py-4 text-neutral-500"><?= e($product['category_slug'] ?? ''); ?></td>
+                                    <td class="px-4 py-4 font-black"><?= e($product['price'] ?? ''); ?></td>
+                                    <td class="px-4 py-4">
+                                        <?php if (!empty($product['status'])): ?>
+                                            <span class="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-700">
+                                                <?= e($product['status']); ?>
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
+                                                Disponible
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+
+                            <?php if (empty($latestProducts)): ?>
+                                <tr>
+                                    <td colspan="4" class="px-4 py-8 text-center font-bold text-neutral-400">
+                                        No hay productos registrados.
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </section>
 
