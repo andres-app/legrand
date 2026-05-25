@@ -1,29 +1,11 @@
 <?php
-session_start();
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/helpers.php';
 
-if (empty($_SESSION['admin_logged'])) {
-    header('Location: index.php');
-    exit;
-}
-
-$jsonPath = __DIR__ . '/../data/tienda.json';
-
-if (!file_exists($jsonPath)) {
-    file_put_contents($jsonPath, json_encode([
-        'categories' => [],
-        'products' => []
-    ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
-}
-
-$data = json_decode(file_get_contents($jsonPath), true);
+$data = loadStoreData();
 
 $categories = $data['categories'] ?? [];
 $products = $data['products'] ?? [];
-
-function e($value)
-{
-    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
-}
 
 $totalCategories = count($categories);
 $totalProducts = count($products);
@@ -52,6 +34,7 @@ $categoryStats = [];
 
 foreach ($categories as $cat) {
     $slug = $cat['slug'] ?? '';
+
     $count = count(array_filter($products, function ($p) use ($slug) {
         return ($p['category_slug'] ?? '') === $slug;
     }));
@@ -97,29 +80,7 @@ $latestProducts = array_slice(array_reverse($products), 0, 5);
 
 <div class="min-h-screen lg:grid lg:grid-cols-[280px_1fr]">
 
-    <aside class="hidden border-r border-black/5 bg-white/90 backdrop-blur-xl lg:block">
-        <div class="sticky top-0 flex h-screen flex-col">
-            <div class="border-b border-black/5 px-7 py-6">
-                <img src="../media/cropped-logo-1.png" class="w-48" alt="Le Grand">
-                <p class="mt-3 text-xs font-black uppercase tracking-[.2em] text-[#2D9B6B]">
-                    Panel administrativo
-                </p>
-            </div>
-
-            <nav class="flex-1 space-y-2 px-4 py-6 text-sm font-black">
-                <a href="dashboard.php" class="block rounded-2xl bg-black px-4 py-3 text-white">Dashboard</a>
-                <a href="categorias.php" class="block rounded-2xl px-4 py-3 text-neutral-600 hover:bg-neutral-100">Categorías</a>
-                <a href="productos.php" class="block rounded-2xl px-4 py-3 text-neutral-600 hover:bg-neutral-100">Productos</a>
-                <a href="../index.php" target="_blank" class="block rounded-2xl px-4 py-3 text-neutral-600 hover:bg-neutral-100">Ver tienda</a>
-            </nav>
-
-            <div class="border-t border-black/5 p-4">
-                <a href="logout.php" class="block rounded-2xl bg-red-50 px-5 py-3 text-center text-sm font-black text-red-700 hover:bg-red-600 hover:text-white">
-                    Cerrar sesión
-                </a>
-            </div>
-        </div>
-    </aside>
+<?php require_once __DIR__ . '/includes/sidebar.php'; ?>
 
     <div>
         <header class="sticky top-0 z-40 border-b border-black/5 bg-white/85 backdrop-blur-xl">
