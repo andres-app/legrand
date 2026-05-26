@@ -1,4 +1,5 @@
 <?php
+//admin/productos.php
 session_start();
 
 if (empty($_SESSION['admin_logged'])) {
