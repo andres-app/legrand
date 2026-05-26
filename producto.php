@@ -1,89 +1,74 @@
 <?php
 // producto.php
 
-$products = [
-    'correa-fossil' => [
-        'name' => 'Correa Fossil',
-        'meta' => 'Correas · Oferta',
-        'price' => 'S/ 150.00',
-        'old_price' => 'S/ 160.00',
-        'discount' => '-6%',
-        'status' => 'Disponible',
-        'description' => 'Correa Fossil original, elegante y resistente. Ideal para renovar el estilo de tu reloj.',
-        'main_img' => './media/S241079_main-300x400.jpg',
-        'gallery' => [
-            './media/S241079_main-300x400.jpg',
-        ],
-        'category' => 'Correas'
-    ],
-    'reloj-fossil-fs4682' => [
-        'name' => 'Reloj Fossil FS4682',
-        'meta' => 'Caballero · Oferta · Relojes',
-        'price' => 'S/ 500.00',
-        'old_price' => 'S/ 600.00',
-        'discount' => '-17%',
-        'status' => 'Agotado',
-        'description' => 'Reloj Fossil para caballero con diseño moderno, sobrio y versátil para uso diario o formal.',
-        'main_img' => './media/FS4682_main-300x400.jpg',
-        'gallery' => [
-            './media/FS4682_main-300x400.jpg',
-        ],
-        'category' => 'Relojes'
-    ],
-    'reloj-fossil-fs4735' => [
-        'name' => 'Reloj Fossil FS4735',
-        'meta' => 'Caballero · Oferta · Relojes',
-        'price' => 'S/ 500.00',
-        'old_price' => 'S/ 600.00',
-        'discount' => '-17%',
-        'status' => 'Disponible',
-        'description' => 'Reloj Fossil FS4735 con acabado premium, pensado para quienes buscan elegancia y presencia.',
-        'main_img' => './media/FS4735_main-300x400.jpg',
-        'gallery' => [
-            './media/FS4735_main-300x400.jpg',
-        ],
-        'category' => 'Relojes'
-    ],
-    'reloj-fossil-fs4812' => [
-        'name' => 'Reloj Fossil FS4812',
-        'meta' => 'Caballero · Oferta · Relojes',
-        'price' => 'S/ 500.00',
-        'old_price' => 'S/ 600.00',
-        'discount' => '-17%',
-        'status' => 'Disponible',
-        'description' => 'Reloj Fossil FS4812 con diseño masculino, elegante y fácil de combinar.',
-        'main_img' => './media/FS4812_main-300x400.jpg',
-        'gallery' => [
-            './media/FS4812_main-300x400.jpg',
-        ],
-        'category' => 'Relojes'
-    ],
-    'reloj-fossil-fs4813' => [
-        'name' => 'Reloj Fossil FS4813',
-        'meta' => 'Caballero · Oferta · Relojes',
-        'price' => 'S/ 500.00',
-        'old_price' => 'S/ 600.00',
-        'discount' => '-17%',
-        'status' => 'Disponible',
-        'description' => 'Reloj Fossil FS4813, una pieza elegante para uso diario, oficina o regalo.',
-        'main_img' => './media/FS4813_main-300x400.jpg',
-        'gallery' => [
-            './media/FS4813_main-300x400.jpg',
-        ],
-        'category' => 'Relojes'
-    ],
+$jsonPath = __DIR__ . '/data/tienda.json';
+
+$data = [
+    'categories' => [],
+    'products' => []
 ];
+
+if (file_exists($jsonPath)) {
+    $jsonContent = file_get_contents($jsonPath);
+    $decoded = json_decode($jsonContent, true);
+
+    if (is_array($decoded)) {
+        $data['categories'] = $decoded['categories'] ?? [];
+        $data['products'] = $decoded['products'] ?? [];
+    }
+}
 
 function e($value)
 {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
-$slug = $_GET['p'] ?? '';
-$product = $products[$slug] ?? null;
+function getCategoryTitle($categorySlug, $categories)
+{
+    foreach ($categories as $category) {
+        if (($category['slug'] ?? '') === $categorySlug) {
+            return $category['title'] ?? 'Sin categoría';
+        }
+    }
+
+    return 'Sin categoría';
+}
+
+$slug = trim($_GET['p'] ?? '');
+$product = null;
+
+foreach ($data['products'] as $item) {
+    if (($item['slug'] ?? '') === $slug) {
+        $product = $item;
+        break;
+    }
+}
 
 if (!$product) {
     http_response_code(404);
+}
+
+$categoryTitle = $product
+    ? getCategoryTitle($product['category_slug'] ?? '', $data['categories'])
+    : '';
+
+$status = trim($product['status'] ?? '');
+
+if ($status === '') {
+    $status = 'Disponible';
+}
+
+$isSoldOut = mb_strtolower($status, 'UTF-8') === 'agotado';
+
+$mainImage = $product['img'] ?? '';
+$gallery = $product['gallery'] ?? [];
+
+if (empty($gallery) && $mainImage !== '') {
+    $gallery = [$mainImage];
+}
+
+if ($mainImage === '' && !empty($gallery[0])) {
+    $mainImage = $gallery[0];
 }
 ?>
 <!DOCTYPE html>
@@ -113,9 +98,20 @@ if (!$product) {
 <?php if (!$product): ?>
 
 <main class="grid min-h-[70vh] place-items-center px-4 text-center">
-    <div>
+    <div class="max-w-xl rounded-[2rem] bg-white p-8 shadow-[0_30px_100px_rgba(0,0,0,.08)]">
         <h1 class="text-4xl font-black">Producto no encontrado</h1>
-        <p class="mt-3 text-neutral-500">El producto seleccionado no existe o fue removido.</p>
+
+        <p class="mt-3 text-neutral-500">
+            El producto seleccionado no existe o fue removido.
+        </p>
+
+        <?php if ($slug !== ''): ?>
+            <div class="mt-5 rounded-2xl bg-neutral-50 px-4 py-3 text-sm font-bold text-neutral-500">
+                Slug consultado:
+                <span class="text-black"><?= e($slug); ?></span>
+            </div>
+        <?php endif; ?>
+
         <a href="./index.php#tienda" class="mt-6 inline-flex rounded-full bg-black px-6 py-3 font-bold text-white">
             Ver productos
         </a>
@@ -135,21 +131,45 @@ if (!$product) {
                     </span>
                 <?php endif; ?>
 
-                <img id="mainImage" src="<?= e($product['main_img']); ?>" alt="<?= e($product['name']); ?>" class="mx-auto h-[480px] w-full object-contain">
+                <?php if ($mainImage !== ''): ?>
+                    <img 
+                        id="mainImage" 
+                        src="<?= e($mainImage); ?>" 
+                        alt="<?= e($product['alt'] ?? $product['name']); ?>" 
+                        class="mx-auto h-[480px] w-full object-contain"
+                    >
+                <?php else: ?>
+                    <div class="grid h-[480px] place-items-center text-center">
+                        <div>
+                            <p class="text-5xl font-black text-neutral-300">LG</p>
+                            <p class="mt-3 text-sm font-bold text-neutral-400">Sin imagen disponible</p>
+                        </div>
+                    </div>
+                <?php endif; ?>
             </div>
 
-            <div class="grid grid-cols-4 gap-3 sm:grid-cols-6">
-                <?php foreach ($product['gallery'] as $img): ?>
-                    <button type="button" onclick="changeImage('<?= e($img); ?>')" class="rounded-2xl border border-black/10 bg-white p-2 shadow-sm transition hover:border-[#5FD8AD]">
-                        <img src="<?= e($img); ?>" alt="<?= e($product['name']); ?>" class="h-24 w-full object-contain">
-                    </button>
-                <?php endforeach; ?>
-            </div>
+            <?php if (!empty($gallery)): ?>
+                <div class="grid grid-cols-4 gap-3 sm:grid-cols-6">
+                    <?php foreach ($gallery as $img): ?>
+                        <button 
+                            type="button" 
+                            onclick="changeImage('<?= e($img); ?>')" 
+                            class="rounded-2xl border border-black/10 bg-white p-2 shadow-sm transition hover:border-[#5FD8AD]"
+                        >
+                            <img 
+                                src="<?= e($img); ?>" 
+                                alt="<?= e($product['name']); ?>" 
+                                class="h-24 w-full object-contain"
+                            >
+                        </button>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </div>
 
         <div class="rounded-[2rem] bg-white p-6 shadow-[0_30px_100px_rgba(0,0,0,.08)] sm:p-8">
             <p class="text-xs font-black uppercase tracking-[.22em] text-[#2D9B6B]">
-                <?= e($product['meta']); ?>
+                <?= e($product['meta'] ?? $categoryTitle); ?>
             </p>
 
             <h1 class="mt-4 text-4xl font-black leading-none tracking-[-.05em] sm:text-5xl">
@@ -157,40 +177,67 @@ if (!$product) {
             </h1>
 
             <div class="mt-5 flex items-center gap-3">
-                <del class="text-xl font-bold text-neutral-400"><?= e($product['old_price']); ?></del>
-                <span class="text-3xl font-black"><?= e($product['price']); ?></span>
+                <?php if (!empty($product['old_price'])): ?>
+                    <del class="text-xl font-bold text-neutral-400">
+                        <?= e($product['old_price']); ?>
+                    </del>
+                <?php endif; ?>
+
+                <span class="text-3xl font-black">
+                    <?= e($product['price'] ?? ''); ?>
+                </span>
             </div>
 
-            <div class="mt-5 inline-flex rounded-full <?= strtolower($product['status']) === 'agotado' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'; ?> px-4 py-2 text-sm font-black">
-                <?= e($product['status']); ?>
+            <div class="mt-5 inline-flex rounded-full <?= $isSoldOut ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'; ?> px-4 py-2 text-sm font-black">
+                <?= e($status); ?>
             </div>
 
             <p class="mt-7 text-base font-medium leading-8 text-neutral-600">
-                <?= e($product['description']); ?>
+                <?= e($product['description'] ?? 'Producto seleccionado por Le Grand Montres & Bijoux.'); ?>
             </p>
 
             <div class="mt-8 grid gap-3 sm:grid-cols-2">
-                <?php if (strtolower($product['status']) !== 'agotado'): ?>
-                    <a href="https://wa.me/51999999999?text=Hola,%20quiero%20consultar%20por%20<?= urlencode($product['name']); ?>"
-                       target="_blank"
-                       class="inline-flex items-center justify-center rounded-2xl bg-[#5FD8AD] px-6 py-4 text-sm font-black uppercase tracking-[.12em] text-black transition hover:bg-black hover:text-white">
+                <?php if (!$isSoldOut): ?>
+                    <a 
+                        href="https://wa.me/51999999999?text=Hola,%20quiero%20consultar%20por%20<?= rawurlencode($product['name']); ?>"
+                        target="_blank"
+                        class="inline-flex items-center justify-center rounded-2xl bg-[#5FD8AD] px-6 py-4 text-sm font-black uppercase tracking-[.12em] text-black transition hover:bg-black hover:text-white"
+                    >
                         WhatsApp
                     </a>
 
-                    <button type="button" class="rounded-2xl bg-black px-6 py-4 text-sm font-black uppercase tracking-[.12em] text-white">
+                    <button 
+                        type="button" 
+                        class="rounded-2xl bg-black px-6 py-4 text-sm font-black uppercase tracking-[.12em] text-white"
+                    >
                         Añadir al carrito
                     </button>
                 <?php else: ?>
-                    <button type="button" disabled class="col-span-full rounded-2xl bg-neutral-200 px-6 py-4 text-sm font-black uppercase tracking-[.12em] text-neutral-500">
+                    <button 
+                        type="button" 
+                        disabled 
+                        class="col-span-full rounded-2xl bg-neutral-200 px-6 py-4 text-sm font-black uppercase tracking-[.12em] text-neutral-500"
+                    >
                         Producto agotado
                     </button>
                 <?php endif; ?>
             </div>
 
             <div class="mt-8 border-t border-black/10 pt-6 text-sm font-semibold text-neutral-600">
-                <p><strong class="text-black">Categoría:</strong> <?= e($product['category']); ?></p>
-                <p class="mt-2"><strong class="text-black">Marca:</strong> Fossil</p>
-                <p class="mt-2"><strong class="text-black">Tienda:</strong> Le Grand Montres & Bijoux</p>
+                <p>
+                    <strong class="text-black">Categoría:</strong> 
+                    <?= e($categoryTitle); ?>
+                </p>
+
+                <p class="mt-2">
+                    <strong class="text-black">Código:</strong> 
+                    <?= e($product['slug']); ?>
+                </p>
+
+                <p class="mt-2">
+                    <strong class="text-black">Tienda:</strong> 
+                    Le Grand Montres & Bijoux
+                </p>
             </div>
         </div>
 
@@ -199,7 +246,11 @@ if (!$product) {
 
 <script>
 function changeImage(src) {
-    document.getElementById('mainImage').src = src;
+    const mainImage = document.getElementById('mainImage');
+
+    if (mainImage) {
+        mainImage.src = src;
+    }
 }
 </script>
 

@@ -49,7 +49,28 @@ $categories = array_map(function ($category) {
     ];
 }, $data['categories']);
 
-$products = $data['products'] ?? [];
+$allProducts = $data['products'] ?? [];
+
+// Productos generales, por si los necesitas en otra sección
+$products = array_reverse($allProducts);
+
+// Productos seleccionados manualmente desde el admin para “Rebajas disponibles”
+$saleProducts = array_values(array_filter($allProducts, function ($product) {
+    return !empty($product['sale_featured']);
+}));
+
+usort($saleProducts, function ($a, $b) {
+    $orderA = isset($a['sale_order']) ? (int) $a['sale_order'] : 999;
+    $orderB = isset($b['sale_order']) ? (int) $b['sale_order'] : 999;
+
+    if ($orderA === $orderB) {
+        return strcasecmp($a['name'] ?? '', $b['name'] ?? '');
+    }
+
+    return $orderA <=> $orderB;
+});
+
+$saleProducts = array_slice($saleProducts, 0, 5);
 
 // Para que los productos nuevos aparezcan primero
 $products = array_reverse($products);
@@ -409,7 +430,7 @@ function e($value)
                 </div>
 
                 <div id="tienda" class="scroll-stage mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                    <?php foreach ($products as $index => $product): ?>
+                    <?php foreach ($saleProducts as $index => $product): ?>
                         <article class="product-card reveal float-card group rounded-[1.7rem] border border-white/10 bg-white/[.045] p-3 shadow-2xl shadow-black/20 transition duration-500 hover:border-brand-mint/30 hover:bg-white/[.075] hover:shadow-mint" data-float="<?= e(($index % 3 + 1) * 8); ?>">
                             <div class="relative grid aspect-[4/5] place-items-center overflow-hidden rounded-[1.35rem] bg-[#f6f5f1]">
                                 <?php if (!empty($product['status'])): ?>
