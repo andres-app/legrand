@@ -23,12 +23,15 @@ if (!file_exists($jsonPath)) {
 
 $data = json_decode(file_get_contents($jsonPath), true);
 
-if (!$data) {
+if (!is_array($data)) {
     $data = [
         'categories' => [],
         'products' => []
     ];
 }
+
+$data['categories'] = $data['categories'] ?? [];
+$data['products'] = $data['products'] ?? [];
 
 function slugify($text)
 {
@@ -43,9 +46,24 @@ function saveJson($path, $data)
     file_put_contents($path, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 }
 
+function redirectDashboard($params = '')
+{
+    $url = 'dashboard.php';
+
+    if ($params !== '') {
+        $url .= '?' . ltrim($params, '?');
+    }
+
+    header('Location: ' . $url);
+    exit;
+}
+
 $type = $_POST['type'] ?? '';
 $mode = $_POST['mode'] ?? 'create';
 
+/* =========================================================
+   CATEGORÍAS
+========================================================= */
 if ($type === 'category') {
     $oldSlug = trim($_POST['old_slug'] ?? '');
     $title = trim($_POST['title'] ?? '');
@@ -61,8 +79,7 @@ if ($type === 'category') {
         }));
 
         saveJson($jsonPath, $data);
-        header('Location: dashboard.php');
-        exit;
+        redirectDashboard('ok=category_deleted');
     }
 
     if ($title !== '') {
@@ -90,9 +107,17 @@ if ($type === 'category') {
             $categoryData['img'] = $newImg;
             $data['categories'][] = $categoryData;
         }
+
+        saveJson($jsonPath, $data);
+        redirectDashboard('ok=category_saved');
     }
+
+    redirectDashboard('error=category_empty');
 }
 
+/* =========================================================
+   PRODUCTOS
+========================================================= */
 if ($type === 'product') {
     $oldSlug = trim($_POST['old_slug'] ?? '');
     $name = trim($_POST['name'] ?? '');
@@ -104,57 +129,109 @@ if ($type === 'product') {
         }));
 
         saveJson($jsonPath, $data);
-        header('Location: dashboard.php');
-        exit;
+        redirectDashboard('ok=product_deleted');
     }
 
-    if ($name !== '' && $categorySlug !== '') {
-        $slug = $oldSlug ?: slugify($name);
-        $newImg = uploadImage($_FILES['img'] ?? [], 'producto');
+    if ($name === '' || $categorySlug === '') {
+        redirectDashboard('error=product_empty');
+    }
 
-        $productData = [
-            'slug' => $slug,
-            'category_slug' => $categorySlug,
-            'img' => $newImg,
-            'alt' => $name,
-            'discount' => trim($_POST['discount'] ?? ''),
-            'status' => trim($_POST['status'] ?? ''),
-            'wish' => !empty($_POST['wish']),
-            'meta' => trim($_POST['meta'] ?? ''),
-            'name' => $name,
-            'old_price' => trim($_POST['old_price'] ?? ''),
-            'price' => trim($_POST['price'] ?? ''),
-            'description' => trim($_POST['description'] ?? ''),
-            'action' => 'Ver detalle',
-            'gallery' => []
-        ];
+    $saleFeatured = !empty($_POST['sale_featured']);
+    $saleOrder = max(1, min(5, (int)($_POST['sale_order'] ?? 5)));
 
-        if ($mode === 'update' && $oldSlug !== '') {
-            foreach ($data['products'] as &$product) {
-                if (($product['slug'] ?? '') === $oldSlug) {
-                    $finalImg = $newImg ?: ($product['img'] ?? '');
-                    $productData['img'] = $finalImg;
-                    $productData['gallery'] = $product['gallery'] ?? [];
-                    if ($newImg) {
-                        $productData['gallery'][] = $newImg;
-                    }
-                    if (empty($productData['gallery']) && $finalImg) {
-                        $productData['gallery'] = [$finalImg];
-                    }
-                    $product = $productData;
-                    break;
-                }
+    /*
+        Validación:
+        Solo se permiten máximo 5 productos marcados para “Rebajas disponibles”.
+        Cuando se edita un producto existente, ese mismo producto no se cuenta.
+    */
+    if ($saleFeatured) {
+        $currentSaleCount = 0;
+
+        foreach ($data['products'] as $existingProduct) {
+            $existingSlug = $existingProduct['slug'] ?? '';
+
+            if ($oldSlug !== '' && $existingSlug === $oldSlug) {
+                continue;
             }
-            unset($product);
-        } else {
+
+            if (!empty($existingProduct['sale_featured'])) {
+                $currentSaleCount++;
+            }
+        }
+
+        if ($currentSaleCount >= 5) {
+            redirectDashboard('error=max_rebajas');
+        }
+    }
+
+    $slug = $oldSlug ?: slugify($name);
+    $newImg = uploadImage($_FILES['img'] ?? [], 'producto');
+
+    $productData = [
+        'slug' => $slug,
+        'category_slug' => $categorySlug,
+        'img' => $newImg,
+        'alt' => $name,
+        'discount' => trim($_POST['discount'] ?? ''),
+        'status' => trim($_POST['status'] ?? ''),
+        'wish' => !empty($_POST['wish']),
+
+        /*
+            NUEVO:
+            Control manual para la sección “Rebajas disponibles”.
+        */
+        'sale_featured' => $saleFeatured,
+        'sale_order' => $saleOrder,
+
+        'meta' => trim($_POST['meta'] ?? ''),
+        'name' => $name,
+        'old_price' => trim($_POST['old_price'] ?? ''),
+        'price' => trim($_POST['price'] ?? ''),
+        'description' => trim($_POST['description'] ?? ''),
+        'action' => 'Ver detalle',
+        'gallery' => []
+    ];
+
+    if ($mode === 'update' && $oldSlug !== '') {
+        $updated = false;
+
+        foreach ($data['products'] as &$product) {
+            if (($product['slug'] ?? '') === $oldSlug) {
+                $finalImg = $newImg ?: ($product['img'] ?? '');
+
+                $productData['img'] = $finalImg;
+                $productData['gallery'] = $product['gallery'] ?? [];
+
+                if ($newImg) {
+                    $productData['gallery'][] = $newImg;
+                    $productData['gallery'] = array_values(array_unique($productData['gallery']));
+                }
+
+                if (empty($productData['gallery']) && $finalImg) {
+                    $productData['gallery'] = [$finalImg];
+                }
+
+                $product = $productData;
+                $updated = true;
+                break;
+            }
+        }
+
+        unset($product);
+
+        if (!$updated) {
             $productData['img'] = $newImg;
             $productData['gallery'] = $newImg ? [$newImg] : [];
             $data['products'][] = $productData;
         }
+    } else {
+        $productData['img'] = $newImg;
+        $productData['gallery'] = $newImg ? [$newImg] : [];
+        $data['products'][] = $productData;
     }
+
+    saveJson($jsonPath, $data);
+    redirectDashboard('ok=product_saved');
 }
 
-saveJson($jsonPath, $data);
-
-header('Location: dashboard.php');
-exit;
+redirectDashboard();
