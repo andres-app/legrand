@@ -1,117 +1,135 @@
 {
-    "categories": [
+  "categories": [
       {
-        "slug": "relojes-caballero",
-        "title": "Relojes de caballero",
-        "subtitle": "Ver colección",
-        "img": "./media/categoria-1.jpg",
-        "alt": "Relojes de caballero"
+          "slug": "relojes-caballero",
+          "title": "Relojes de caballero",
+          "subtitle": "Ver colección",
+          "img": ".\/media\/categoria-1.jpg",
+          "alt": "Relojes de caballero"
       },
       {
-        "slug": "relojes-dama",
-        "title": "Relojes de dama",
-        "subtitle": "Ver colección",
-        "img": "./media/categoria-2.jpg",
-        "alt": "Relojes de dama"
+          "slug": "relojes-dama",
+          "title": "Relojes de dama",
+          "subtitle": "Ver colección",
+          "img": ".\/media\/categoria-2.jpg",
+          "alt": "Relojes de dama"
       },
       {
-        "slug": "correas",
-        "title": "Correas",
-        "subtitle": "Ver colección",
-        "img": "./media/categoria-3.jpg",
-        "alt": "Correas"
+          "slug": "correas",
+          "title": "Correas",
+          "subtitle": "Ver colección",
+          "img": ".\/media\/categoria-3.jpg",
+          "alt": "Correas"
       }
-    ],
-    "products": [
+  ],
+  "products": [
       {
-        "slug": "correa-fossil",
-        "category_slug": "correas",
-        "img": "./media/S241079_main-300x400.jpg",
-        "alt": "Correa Fossil",
-        "discount": "-6%",
-        "status": "",
-        "wish": false,
-        "meta": "Correas · Oferta",
-        "name": "Correa Fossil",
-        "old_price": "S/ 160.00",
-        "price": "S/ 150.00",
-        "description": "Correa Fossil original, elegante y resistente. Ideal para renovar el estilo de tu reloj.",
-        "action": "Ver detalle",
-        "gallery": [
-          "./media/S241079_main-300x400.jpg"
-        ]
+          "slug": "correa-fossil",
+          "category_slug": "correas",
+          "img": ".\/media\/S241079_main-300x400.jpg",
+          "alt": "Correa Fossil",
+          "discount": "-6%",
+          "status": "",
+          "wish": false,
+          "meta": "Correas · Oferta",
+          "name": "Correa Fossil",
+          "old_price": "S\/ 160.00",
+          "price": "S\/ 150.00",
+          "description": "Correa Fossil original, elegante y resistente. Ideal para renovar el estilo de tu reloj.",
+          "action": "Ver detalle",
+          "gallery": [
+              ".\/media\/S241079_main-300x400.jpg"
+          ]
       },
       {
-        "slug": "reloj-fossil-fs4682",
-        "category_slug": "relojes-caballero",
-        "img": "./media/FS4682_main-300x400.jpg",
-        "alt": "Reloj Fossil FS4682",
-        "discount": "-17%",
-        "status": "Agotado",
-        "wish": false,
-        "meta": "Caballero · Oferta · Relojes",
-        "name": "Reloj Fossil FS4682",
-        "old_price": "S/ 600.00",
-        "price": "S/ 500.00",
-        "description": "Reloj Fossil para caballero con diseño moderno, sobrio y elegante.",
-        "action": "Ver detalle",
-        "gallery": [
-          "./media/FS4682_main-300x400.jpg"
-        ]
+          "slug": "reloj-fossil-fs4682",
+          "category_slug": "relojes-caballero",
+          "img": ".\/media\/FS4682_main-300x400.jpg",
+          "alt": "Reloj Fossil FS4682",
+          "discount": "-17%",
+          "status": "Agotado",
+          "wish": false,
+          "meta": "Caballero · Oferta · Relojes",
+          "name": "Reloj Fossil FS4682",
+          "old_price": "S\/ 600.00",
+          "price": "S\/ 500.00",
+          "description": "Reloj Fossil para caballero con diseño moderno, sobrio y elegante.",
+          "action": "Ver detalle",
+          "gallery": [
+              ".\/media\/FS4682_main-300x400.jpg"
+          ]
       },
       {
-        "slug": "reloj-fossil-fs4735",
-        "category_slug": "relojes-caballero",
-        "img": "./media/FS4735_main-300x400.jpg",
-        "alt": "Reloj Fossil FS4735",
-        "discount": "-17%",
-        "status": "",
-        "wish": true,
-        "meta": "Caballero · Oferta · Relojes",
-        "name": "Reloj Fossil FS4735",
-        "old_price": "S/ 600.00",
-        "price": "S/ 500.00",
-        "description": "Reloj Fossil FS4735 con acabado premium y diseño sofisticado.",
-        "action": "Ver detalle",
-        "gallery": [
-          "./media/FS4735_main-300x400.jpg"
-        ]
+          "slug": "reloj-fossil-fs4735",
+          "category_slug": "relojes-caballero",
+          "img": ".\/media\/FS4735_main-300x400.jpg",
+          "alt": "Reloj Fossil FS4735",
+          "discount": "-17%",
+          "status": "",
+          "wish": true,
+          "meta": "Caballero · Oferta · Relojes",
+          "name": "Reloj Fossil FS4735",
+          "old_price": "S\/ 600.00",
+          "price": "S\/ 500.00",
+          "description": "Reloj Fossil FS4735 con acabado premium y diseño sofisticado.",
+          "action": "Ver detalle",
+          "gallery": [
+              ".\/media\/FS4735_main-300x400.jpg"
+          ]
       },
       {
-        "slug": "reloj-fossil-fs4812",
-        "category_slug": "relojes-caballero",
-        "img": "./media/FS4812_main-300x400.jpg",
-        "alt": "Reloj Fossil FS4812",
-        "discount": "-17%",
-        "status": "",
-        "wish": false,
-        "meta": "Caballero · Oferta · Relojes",
-        "name": "Reloj Fossil FS4812",
-        "old_price": "S/ 600.00",
-        "price": "S/ 500.00",
-        "description": "Reloj Fossil FS4812 elegante y versátil para uso diario.",
-        "action": "Ver detalle",
-        "gallery": [
-          "./media/FS4812_main-300x400.jpg"
-        ]
+          "slug": "reloj-fossil-fs4812",
+          "category_slug": "relojes-caballero",
+          "img": ".\/media\/FS4812_main-300x400.jpg",
+          "alt": "Reloj Fossil FS4812",
+          "discount": "-17%",
+          "status": "",
+          "wish": false,
+          "meta": "Caballero · Oferta · Relojes",
+          "name": "Reloj Fossil FS4812",
+          "old_price": "S\/ 600.00",
+          "price": "S\/ 500.00",
+          "description": "Reloj Fossil FS4812 elegante y versátil para uso diario.",
+          "action": "Ver detalle",
+          "gallery": [
+              ".\/media\/FS4812_main-300x400.jpg"
+          ]
       },
       {
-        "slug": "reloj-fossil-fs4813",
-        "category_slug": "relojes-caballero",
-        "img": "./media/FS4813_main-300x400.jpg",
-        "alt": "Reloj Fossil FS4813",
-        "discount": "-17%",
-        "status": "",
-        "wish": false,
-        "meta": "Caballero · Oferta · Relojes",
-        "name": "Reloj Fossil FS4813",
-        "old_price": "S/ 600.00",
-        "price": "S/ 500.00",
-        "description": "Reloj Fossil FS4813 con estilo moderno y elegante.",
-        "action": "Ver detalle",
-        "gallery": [
-          "./media/FS4813_main-300x400.jpg"
-        ]
+          "slug": "reloj-fossil-fs4813",
+          "category_slug": "relojes-caballero",
+          "img": ".\/media\/FS4813_main-300x400.jpg",
+          "alt": "Reloj Fossil FS4813",
+          "discount": "-17%",
+          "status": "",
+          "wish": false,
+          "meta": "Caballero · Oferta · Relojes",
+          "name": "Reloj Fossil FS4813",
+          "old_price": "S\/ 600.00",
+          "price": "S\/ 500.00",
+          "description": "Reloj Fossil FS4813 con estilo moderno y elegante.",
+          "action": "Ver detalle",
+          "gallery": [
+              ".\/media\/FS4813_main-300x400.jpg"
+          ]
+      },
+      {
+          "slug": "ejemplo",
+          "category_slug": "relojes-caballero",
+          "img": ".\/media\/producto-20260526024214-3780.jpeg",
+          "alt": "Ejemplo",
+          "discount": "50",
+          "status": "",
+          "wish": false,
+          "meta": "Caballer-correa-bebe",
+          "name": "Ejemplo",
+          "old_price": "500",
+          "price": "100",
+          "description": "Hola soy un ejemplo",
+          "action": "Ver detalle",
+          "gallery": [
+              ".\/media\/producto-20260526024214-3780.jpeg"
+          ]
       }
-    ]
-  }
+  ]
+}

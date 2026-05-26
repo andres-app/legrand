@@ -1,96 +1,107 @@
 <?php
-$categories = [
-    'relojes-caballero' => 'Relojes de caballero',
-    'relojes-dama' => 'Relojes de dama',
-    'correas' => 'Correas',
+// categoria.php
+
+$jsonPath = __DIR__ . '/data/tienda.json';
+
+$data = [
+    'categories' => [],
+    'products' => []
 ];
 
-$products = [
-    [
-        'slug' => 'correa-fossil',
-        'category_slug' => 'correas',
-        'img' => './media/S241079_main-300x400.jpg',
-        'alt' => 'Correa Fossil',
-        'discount' => '-6%',
-        'status' => '',
-        'wish' => false,
-        'meta' => 'Correas · Oferta',
-        'name' => 'Correa Fossil',
-        'old_price' => 'S/ 160.00',
-        'price' => 'S/ 150.00',
-        'action' => 'Ver detalle',
-    ],
-    [
-        'slug' => 'reloj-fossil-fs4682',
-        'category_slug' => 'relojes-caballero',
-        'img' => './media/FS4682_main-300x400.jpg',
-        'alt' => 'Reloj Fossil FS4682',
-        'discount' => '-17%',
-        'status' => 'Agotado',
-        'wish' => false,
-        'meta' => 'Caballero · Oferta · Relojes',
-        'name' => 'Reloj Fossil FS4682',
-        'old_price' => 'S/ 600.00',
-        'price' => 'S/ 500.00',
-        'action' => 'Ver detalle',
-    ],
-    [
-        'slug' => 'reloj-fossil-fs4735',
-        'category_slug' => 'relojes-caballero',
-        'img' => './media/FS4735_main-300x400.jpg',
-        'alt' => 'Reloj Fossil FS4735',
-        'discount' => '-17%',
-        'status' => '',
-        'wish' => true,
-        'meta' => 'Caballero · Oferta · Relojes',
-        'name' => 'Reloj Fossil FS4735',
-        'old_price' => 'S/ 600.00',
-        'price' => 'S/ 500.00',
-        'action' => 'Ver detalle',
-    ],
-    [
-        'slug' => 'reloj-fossil-fs4812',
-        'category_slug' => 'relojes-caballero',
-        'img' => './media/FS4812_main-300x400.jpg',
-        'alt' => 'Reloj Fossil FS4812',
-        'discount' => '-17%',
-        'status' => '',
-        'wish' => false,
-        'meta' => 'Caballero · Oferta · Relojes',
-        'name' => 'Reloj Fossil FS4812',
-        'old_price' => 'S/ 600.00',
-        'price' => 'S/ 500.00',
-        'action' => 'Ver detalle',
-    ],
-    [
-        'slug' => 'reloj-fossil-fs4813',
-        'category_slug' => 'relojes-caballero',
-        'img' => './media/FS4813_main-300x400.jpg',
-        'alt' => 'Reloj Fossil FS4813',
-        'discount' => '-17%',
-        'status' => '',
-        'wish' => false,
-        'meta' => 'Caballero · Oferta · Relojes',
-        'name' => 'Reloj Fossil FS4813',
-        'old_price' => 'S/ 600.00',
-        'price' => 'S/ 500.00',
-        'action' => 'Ver detalle',
-    ],
-];
+if (file_exists($jsonPath)) {
+    $jsonContent = file_get_contents($jsonPath);
+    $decodedData = json_decode($jsonContent, true);
+
+    if (is_array($decodedData)) {
+        $data['categories'] = $decodedData['categories'] ?? [];
+        $data['products'] = $decodedData['products'] ?? [];
+    }
+}
 
 function e($value)
 {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 }
 
+function normalizeImagePath($path)
+{
+    $path = trim((string) $path);
+
+    if ($path === '') {
+        return './media/no-image.png';
+    }
+
+    return $path;
+}
+
+function normalizeDiscount($discount)
+{
+    $discount = trim((string) $discount);
+
+    if ($discount === '') {
+        return '';
+    }
+
+    if (str_contains($discount, '%')) {
+        return $discount;
+    }
+
+    if (is_numeric($discount)) {
+        return '-' . $discount . '%';
+    }
+
+    return $discount;
+}
+
+function normalizePrice($price)
+{
+    $price = trim((string) $price);
+
+    if ($price === '') {
+        return '';
+    }
+
+    if (str_starts_with($price, 'S/')) {
+        return $price;
+    }
+
+    if (is_numeric($price)) {
+        return 'S/ ' . number_format((float) $price, 2);
+    }
+
+    return $price;
+}
+
 $cat = $_GET['cat'] ?? '';
-$categoryName = $categories[$cat] ?? 'Categoría no encontrada';
 
-$filteredProducts = array_filter($products, function ($product) use ($cat) {
-    return ($product['category_slug'] ?? '') === $cat;
-});
+$categoryMap = [];
 
-if (!isset($categories[$cat])) {
+foreach ($data['categories'] as $category) {
+    $slug = $category['slug'] ?? '';
+
+    if ($slug !== '') {
+        $categoryMap[$slug] = [
+            'title' => $category['title'] ?? 'Categoría',
+            'subtitle' => $category['subtitle'] ?? 'Ver colección',
+            'img' => $category['img'] ?? '',
+            'alt' => $category['alt'] ?? ($category['title'] ?? 'Categoría')
+        ];
+    }
+}
+
+$categoryExists = isset($categoryMap[$cat]);
+$categoryName = $categoryExists ? $categoryMap[$cat]['title'] : 'Categoría no encontrada';
+
+$products = $data['products'] ?? [];
+
+// Nuevos productos primero
+$products = array_reverse($products);
+
+$filteredProducts = array_values(array_filter($products, function ($product) use ($cat) {
+    return trim((string)($product['category_slug'] ?? '')) === trim((string)$cat);
+}));
+
+if (!$categoryExists) {
     http_response_code(404);
 }
 ?>
@@ -143,7 +154,7 @@ if (!isset($categories[$cat])) {
             </p>
         </div>
 
-        <?php if (!isset($categories[$cat])): ?>
+        <?php if (!$categoryExists): ?>
 
             <div class="rounded-[2rem] border border-black/5 bg-white p-10 text-center shadow-[0_24px_80px_rgba(0,0,0,.08)]">
                 <h2 class="text-2xl font-black">Categoría no encontrada</h2>
@@ -165,45 +176,64 @@ if (!isset($categories[$cat])) {
 
             <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 <?php foreach ($filteredProducts as $product): ?>
+                    <?php
+                    $slug = $product['slug'] ?? '';
+                    $name = $product['name'] ?? 'Producto sin nombre';
+                    $img = normalizeImagePath($product['img'] ?? '');
+                    $alt = $product['alt'] ?? $name;
+                    $discount = normalizeDiscount($product['discount'] ?? '');
+                    $status = trim((string)($product['status'] ?? ''));
+                    $wish = !empty($product['wish']);
+                    $meta = $product['meta'] ?? 'Producto';
+                    $oldPrice = normalizePrice($product['old_price'] ?? '');
+                    $price = normalizePrice($product['price'] ?? '');
+                    $action = $product['action'] ?? 'Ver detalle';
+                    ?>
+
                     <article class="group rounded-[1.7rem] border border-black/5 bg-white p-3 shadow-[0_24px_80px_rgba(0,0,0,.08)] transition duration-300 hover:-translate-y-1 hover:border-[#5FD8AD]/50">
-                        <a href="./producto.php?p=<?= e($product['slug']); ?>" class="relative grid aspect-[4/5] place-items-center overflow-hidden rounded-[1.35rem] bg-[#f6f5f1]">
-                            <?php if (!empty($product['status'])): ?>
+                        <a href="./producto.php?p=<?= e($slug); ?>" class="relative grid aspect-[4/5] place-items-center overflow-hidden rounded-[1.35rem] bg-[#f6f5f1]">
+                            <?php if ($status !== ''): ?>
                                 <span class="absolute left-3 top-3 z-10 rounded-full bg-black px-3 py-1.5 text-[11px] font-black uppercase tracking-[.14em] text-white">
-                                    <?= e($product['status']); ?>
+                                    <?= e($status); ?>
                                 </span>
                             <?php endif; ?>
 
-                            <?php if (!empty($product['discount'])): ?>
+                            <?php if ($discount !== ''): ?>
                                 <span class="absolute right-3 top-3 z-10 rounded-full bg-[#5FD8AD] px-3 py-1.5 text-[11px] font-black text-black">
-                                    <?= e($product['discount']); ?>
+                                    <?= e($discount); ?>
                                 </span>
                             <?php endif; ?>
 
-                            <?php if (!empty($product['wish'])): ?>
+                            <?php if ($wish): ?>
                                 <span class="absolute bottom-3 right-3 z-10 inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-2 text-xs font-bold text-neutral-700 shadow-sm backdrop-blur-xl">
                                     ♡ Lo deseo
                                 </span>
                             <?php endif; ?>
 
-                            <img src="<?= e($product['img']); ?>" alt="<?= e($product['alt']); ?>" class="h-full w-full object-contain p-5 transition duration-700 group-hover:scale-105">
+                            <img src="<?= e($img); ?>" alt="<?= e($alt); ?>" class="h-full w-full object-contain p-5 transition duration-700 group-hover:scale-105">
                         </a>
 
                         <div class="px-2 pb-3 pt-5 text-center">
                             <p class="text-xs font-bold uppercase tracking-[.18em] text-[#2D9B6B]">
-                                <?= e($product['meta']); ?>
+                                <?= e($meta); ?>
                             </p>
 
                             <h3 class="mt-3 min-h-[3rem] text-base font-black uppercase leading-6 text-neutral-950">
-                                <?= e($product['name']); ?>
+                                <?= e($name); ?>
                             </h3>
 
                             <div class="mt-3 flex items-center justify-center gap-2 text-sm">
-                                <del class="text-neutral-400"><?= e($product['old_price']); ?></del>
-                                <span class="text-base font-black text-neutral-950"><?= e($product['price']); ?></span>
+                                <?php if ($oldPrice !== ''): ?>
+                                    <del class="text-neutral-400"><?= e($oldPrice); ?></del>
+                                <?php endif; ?>
+
+                                <?php if ($price !== ''): ?>
+                                    <span class="text-base font-black text-neutral-950"><?= e($price); ?></span>
+                                <?php endif; ?>
                             </div>
 
-                            <a href="./producto.php?p=<?= e($product['slug']); ?>" class="mt-5 inline-flex rounded-full bg-[#5FD8AD] px-5 py-3 text-xs font-black uppercase tracking-[.13em] text-black transition hover:bg-black hover:text-white">
-                                <?= e($product['action']); ?>
+                            <a href="./producto.php?p=<?= e($slug); ?>" class="mt-5 inline-flex rounded-full bg-[#5FD8AD] px-5 py-3 text-xs font-black uppercase tracking-[.13em] text-black transition hover:bg-black hover:text-white">
+                                <?= e($action); ?>
                             </a>
                         </div>
                     </article>

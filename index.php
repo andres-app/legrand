@@ -19,105 +19,40 @@ $slides = [
     ],
 ];
 
-$categories = [
-    [
-        'slug' => 'relojes-caballero',
-        'title' => 'Relojes de caballero',
-        'subtitle' => 'Ver colección',
-        'img' => './media/categoria-1.jpg',
-        'alt' => 'Relojes de caballero',
-        'href' => './categoria.php?cat=relojes-caballero'
-    ],
-    [
-        'slug' => 'relojes-dama',
-        'title' => 'Relojes de dama',
-        'subtitle' => 'Ver colección',
-        'img' => './media/categoria-2.jpg',
-        'alt' => 'Relojes de dama',
-        'href' => './categoria.php?cat=relojes-dama'
-    ],
-    [
-        'slug' => 'correas',
-        'title' => 'Correas',
-        'subtitle' => 'Ver colección',
-        'img' => './media/categoria-3.jpg',
-        'alt' => 'Correas',
-        'href' => './categoria.php?cat=correas'
-    ],
+$jsonPath = __DIR__ . '/data/tienda.json';
+
+$data = [
+    'categories' => [],
+    'products' => []
 ];
 
-$products = [
-    [
-        'slug' => 'correa-fossil',
-        'category_slug' => 'correas',
-        'img' => './media/S241079_main-300x400.jpg',
-        'alt' => 'Correa Fossil',
-        'discount' => '-6%',
-        'status' => '',
-        'wish' => false,
-        'meta' => 'Correas · Oferta',
-        'name' => 'Correa Fossil',
-        'old_price' => 'S/ 160.00',
-        'price' => 'S/ 150.00',
-        'action' => 'Ver detalle',
-    ],
-    [
-        'slug' => 'reloj-fossil-fs4682',
-        'category_slug' => 'relojes-caballero',
-        'img' => './media/FS4682_main-300x400.jpg',
-        'alt' => 'Reloj Fossil FS4682',
-        'discount' => '-17%',
-        'status' => 'Agotado',
-        'wish' => false,
-        'meta' => 'Caballero · Oferta · Relojes',
-        'name' => 'Reloj Fossil FS4682',
-        'old_price' => 'S/ 600.00',
-        'price' => 'S/ 500.00',
-        'action' => 'Ver detalle',
-    ],
-    [
-        'slug' => 'reloj-fossil-fs4735',
-        'category_slug' => 'relojes-caballero',
-        'img' => './media/FS4735_main-300x400.jpg',
-        'alt' => 'Reloj Fossil FS4735',
-        'discount' => '-17%',
-        'status' => '',
-        'wish' => true,
-        'meta' => 'Caballero · Oferta · Relojes',
-        'name' => 'Reloj Fossil FS4735',
-        'old_price' => 'S/ 600.00',
-        'price' => 'S/ 500.00',
-        'action' => 'Ver detalle',
-    ],
-    [
-        'slug' => 'reloj-fossil-fs4812',
-        'category_slug' => 'relojes-caballero',
-        'img' => './media/FS4812_main-300x400.jpg',
-        'alt' => 'Reloj Fossil FS4812',
-        'discount' => '-17%',
-        'status' => '',
-        'wish' => false,
-        'meta' => 'Caballero · Oferta · Relojes',
-        'name' => 'Reloj Fossil FS4812',
-        'old_price' => 'S/ 600.00',
-        'price' => 'S/ 500.00',
-        'action' => 'Ver detalle',
-    ],
-    [
-        'slug' => 'reloj-fossil-fs4813',
-        'category_slug' => 'relojes-caballero',
-        'img' => './media/FS4813_main-300x400.jpg',
-        'alt' => 'Reloj Fossil FS4813',
-        'discount' => '-17%',
-        'status' => '',
-        'wish' => false,
-        'meta' => 'Caballero · Oferta · Relojes',
-        'name' => 'Reloj Fossil FS4813',
-        'old_price' => 'S/ 600.00',
-        'price' => 'S/ 500.00',
-        'action' => 'Ver detalle',
-    ],
-];
+if (file_exists($jsonPath)) {
+    $jsonContent = file_get_contents($jsonPath);
+    $decodedData = json_decode($jsonContent, true);
+
+    if (is_array($decodedData)) {
+        $data['categories'] = $decodedData['categories'] ?? [];
+        $data['products'] = $decodedData['products'] ?? [];
+    }
+}
+
+$categories = array_map(function ($category) {
+    $slug = $category['slug'] ?? '';
+
+    return [
+        'slug' => $slug,
+        'title' => $category['title'] ?? '',
+        'subtitle' => $category['subtitle'] ?? 'Ver colección',
+        'img' => $category['img'] ?? '',
+        'alt' => $category['alt'] ?? ($category['title'] ?? 'Categoría'),
+        'href' => './categoria.php?cat=' . rawurlencode($slug)
+    ];
+}, $data['categories']);
+
+$products = $data['products'] ?? [];
+
+// Para que los productos nuevos aparezcan primero
+$products = array_reverse($products);
 
 function e($value)
 {
